@@ -85,6 +85,18 @@ app.patch("/api/user/:id", (req, res) => {
   return res.sendStatus(200);
 });
 
+app.delete("/api/user/:id", (res, req) => {
+  const {
+    params: { id },
+  } = req;
+  const parseId = parseInt(id);
+  if (isNaN(parseId)) return res.sendStatus(400);
+  const findUserId = mockData.findIndex((user) => user.id === parseId);
+  if (findUserId === -1) return res.sendStatus(404);
+  mockData.splice(findUserId);
+  return res.sendStatus(200);
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
