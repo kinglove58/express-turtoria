@@ -12,7 +12,7 @@ passport.deserializeUser((id, done) => {
       user.id === id;
     });
     if (!findUser) throw new Error("invalid");
-    done(null, user);
+    done(null, findUser);
   } catch (error) {
     done(error, null);
   }
