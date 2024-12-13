@@ -5,6 +5,7 @@ import router from "./routers/index.mjs";
 import cookieParser from "cookie-parser";
 import session from "express-session";
 import passport from "passport";
+import "./strategies/local-strategy.mjs";
 const app = express();
 
 app.use(express.json());
@@ -19,8 +20,8 @@ app.use(
     },
   })
 );
-app.use(passport.initialized)
-app.use(passport.session)
+app.use(passport.initialized);
+app.use(passport.session);
 app.use(router);
 
 const PORT = process.env.PORT || 3000;
@@ -34,6 +35,10 @@ app.get("/api/user/:id", resolvedIndexByUser, (req, res) => {
   const findUser = mockData[findUserId];
   if (!findUser) return res.sendStatus(404);
   return res.send(findUser);
+});
+
+app.post("/api/auth", passport.authenticate("local"), (req, res) => {
+  res.sendStatus(200);
 });
 
 app.listen(PORT, () => {
@@ -86,7 +91,7 @@ app.post("/api/cart", (req, res) => {
   return res.status(200).send(item);
 });
 
-app.get("/api/cart", (req,res) =>{
-  if(!req.session.user) return res.sendStatus(401);
+app.get("/api/cart", (req, res) => {
+  if (!req.session.user) return res.sendStatus(401);
   return res.send(req.session.cart ?? []);
-})
+});
