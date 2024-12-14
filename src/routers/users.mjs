@@ -1,22 +1,23 @@
 import { Router } from "express";
-import {
-  query,
-  validationResult,
-  matchedData,
-  checkSchema,
-} from "express-validator";
+import { query, validationResult } from "express-validator";
 import { mockData } from "../utils/constant.mjs";
-import { createUserValidationSchema } from "../utils/validationSchema.mjs";
 import { resolvedIndexByUser } from "../utils/middlewares.mjs";
+import { User } from "../mongoose/schemas/data.mjs";
+import mongoose from "mongoose";
 
 const router = Router();
 
 router.get(
   "/api/user",
-  query("filter").isString().notEmpty().withMessage("it must be empty"),
+  query("filter")
+    .isString()
+    .notEmpty()
+    .withMessage("Filter must be a non-empty string"),
   (req, res) => {
     const result = validationResult(req);
-    console.log(result);
+    if (!result.isEmpty()) {
+      return res.status(400).json({ errors: result.array() });
+    }
 
     const {
       query: { filter, value },
@@ -28,22 +29,18 @@ router.get(
   }
 );
 
-router.post(
-  "/api/user",
-  checkSchema(createUserValidationSchema),
-  (req, res) => {
-    const result = validationResult(req);
-    if (!result.isEmpty()) {
-      return res.status(400).send(result.array());
-    }
-    const data = matchedData(req);
-    console.log("Received data:", data); // Log the received data for debugging
+router.post("/api/user", async (req, res) => {
+  const { body } = req;
+  const newUser = new User(body);
 
-    const newUser = { id: mockData[mockData.length - 1].id + 1, ...data };
-    mockData.push(newUser);
-    return res.status(201).send(newUser);
+  try {
+    const savedUser = await newUser.save();
+    return res.status(200).send(savedUser);
+  } catch (error) {
+    console.log(error);
+    return res.sendStatus(401);
   }
-);
+});
 
 router.put("/api/user/:id", resolvedIndexByUser, (req, res) => {
   const { body, findUserId } = req;
@@ -53,7 +50,6 @@ router.put("/api/user/:id", resolvedIndexByUser, (req, res) => {
 
 router.patch("/api/user/:id", resolvedIndexByUser, (req, res) => {
   const { body, findUserId } = req;
-
   mockData[findUserId] = { ...mockData[findUserId], ...body };
   return res.sendStatus(200);
 });
